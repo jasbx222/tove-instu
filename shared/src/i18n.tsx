@@ -17,8 +17,11 @@ const copy = {
     error: "تعذر إكمال الطلب",
     remaining: "الرصيد المتبقي",
     search: "بحث في هذه الصفحة",
+    menuSearch: "بحث في القائمة",
     menu: "القائمة",
     close: "إغلاق",
+    view: "عرض التفاصيل",
+    saved: "تم الحفظ",
   },
   en: {
     brand: "TOVI",
@@ -36,8 +39,11 @@ const copy = {
     error: "The request could not be completed",
     remaining: "Remaining balance",
     search: "Search this page",
+    menuSearch: "Search the menu",
     menu: "Menu",
     close: "Close",
+    view: "View details",
+    saved: "Saved",
   },
 } as const
 
