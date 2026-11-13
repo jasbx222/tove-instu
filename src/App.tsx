@@ -6,6 +6,7 @@ import { institutePermissions } from "../shared/src/permissions"
 import { Resource } from "../shared/src/resource"
 import { SessionLine, sessionPhase, type SessionRow } from "../shared/src/sessions"
 import { PlanetHero } from "../shared/src/vivid"
+import { StatGrid } from "../shared/src/stats"
 import { SessionSummary } from "../shared/src/summary"
 import { AuthLayout, LoginCard, Shell, type NavItem } from "../shared/src/shell"
 import { Callout, CourseCards, Field, Mast, MetricBand, PermissionPicker, SelectField } from "../shared/src/ui"
@@ -149,12 +150,11 @@ function Dashboard() {
         <span className="tv-glass-chip"><strong>{upcoming}</strong> {lang === "ar" ? "حصص قادمة" : "upcoming sessions"}</span>
         <Link className="btn" to="/sessions">{lang === "ar" ? "جدول الحصص" : "Sessions"}</Link>
       </PlanetHero>
-      <MetricBand items={[
-        { label: lang === "ar" ? "ساعات الرصيد" : "Pool hours", value: data.poolHours, hint: `${data.poolMinutes} ${lang === "ar" ? "دقيقة" : "minutes"}`, lead: true },
-        { label: lang === "ar" ? "المعلمون" : "Teachers", value: data.teachers },
-        { label: lang === "ar" ? "الدورات" : "Courses", value: data.courses },
-        { label: lang === "ar" ? "الطلاب" : "Students", value: data.students },
-        { label: lang === "ar" ? "رصيد الأكواد" : "Code balance", value: data.codeBalance },
+      <StatGrid items={[
+        { label: lang === "ar" ? "ساعات الرصيد المشترك" : "Shared pool hours", value: data.poolHours, icon: "clock", tone: "violet", sub: `${data.poolMinutes} ${lang === "ar" ? "دقيقة" : "minutes"}` },
+        { label: lang === "ar" ? "المعلمون" : "Teachers", value: data.teachers, icon: "people", tone: "sun", sub: `${data.courses} ${lang === "ar" ? "دورات" : "courses"}` },
+        { label: lang === "ar" ? "الطلاب" : "Students", value: data.students, icon: "student", tone: "mint" },
+        { label: lang === "ar" ? "رصيد الأكواد" : "Code balance", value: data.codeBalance, icon: "ticket", tone: "coral", live: live > 0, sub: live ? `${live} ${lang === "ar" ? "حصص مباشرة الآن" : "live now"}` : undefined },
       ]} />
     </div>
   )
