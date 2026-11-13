@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router"
-import { api, setToken, type SessionUser } from "../shared/src/api"
+import { api, mediaUrl, setToken, type SessionUser } from "../shared/src/api"
+import { CourseCoverPicker, FreeToggle } from "../shared/src/media"
 import { useI18n } from "../shared/src/i18n"
 import { institutePermissions } from "../shared/src/permissions"
 import { Resource } from "../shared/src/resource"
@@ -225,7 +226,7 @@ function CourseLinks({ path, tick = 0 }: { path: string; tick?: number }) {
   const { lang } = useI18n()
   const [rows, setRows] = useState<Row[]>([])
   useEffect(() => { api<{ items: Row[] }>(path).then((page) => setRows(page.items ?? [])).catch(() => setRows([])) }, [path, tick])
-  return <CourseCards rows={rows.map((row) => ({ id: row.id, title: row.title }))} href={(id) => `/courses/${id}`} empty={lang === "ar" ? "لا توجد دورات بعد" : "No courses yet"} />
+  return <CourseCards rows={rows.map((row) => ({ id: row.id, title: row.title, image: row.coverFileId ? mediaUrl(`/api/files/${row.coverFileId}`) : "" }))} href={(id) => `/courses/${id}`} empty={lang === "ar" ? "لا توجد دورات بعد" : "No courses yet"} />
 }
 
 function CourseChapters() {
@@ -239,8 +240,13 @@ function CourseChapters() {
   return (
     <div className="page">
       <Mast title={lang === "ar" ? "فصول الدورة" : "Course chapters"} />
-      <PageHeader title={lang === "ar" ? "الفصول" : "Chapters"} count={chapters.length} onAdd={() => setOpen(true)} addLabel={lang === "ar" ? "إضافة فصل" : "Add chapter"} />
-      {chapters.map((chapter) => <Lessons key={chapter.id} chapter={chapter} />)}
+      <div className="split">
+        <div className="stack">
+          <PageHeader title={lang === "ar" ? "الفصول" : "Chapters"} count={chapters.length} onAdd={() => setOpen(true)} addLabel={lang === "ar" ? "إضافة فصل" : "Add chapter"} />
+          {chapters.map((chapter) => <Lessons key={chapter.id} chapter={chapter} />)}
+        </div>
+        <aside className="stack"><CourseCoverPicker base="/api/institute" id={id} /></aside>
+      </div>
       <FormModal open={open} title={lang === "ar" ? "فصل جديد" : "New chapter"} onClose={() => setOpen(false)} onSubmit={async () => { await api("/api/institute/chapters", { method: "POST", body: JSON.stringify({ courseId: id, title }) }); setTitle(""); setOpen(false); await load() }}>
         <Field label={lang === "ar" ? "فصل" : "Chapter"} value={title} onChange={(e) => setTitle(e.target.value)} required />
       </FormModal>
@@ -253,16 +259,23 @@ function Lessons({ chapter }: { chapter: Row }) {
   const [lessons, setLessons] = useState<Row[]>([])
   const [title, setTitle] = useState("")
   const [video, setVideo] = useState("")
+  const [free, setFree] = useState(false)
   async function load() { setLessons(await api(`/api/institute/chapters/${chapter.id}/lessons`)) }
   useEffect(() => { void load() }, [chapter.id])
   const [open, setOpen] = useState(false)
   return (
     <section className="sheet stack">
       <PageHeader title={chapter.title} count={lessons.length} onAdd={() => setOpen(true)} addLabel={lang === "ar" ? "إضافة درس" : "Add lesson"} />
-      {lessons.length === 0 ? <div className="empty"><i /><strong>{lang === "ar" ? "لا دروس بعد" : "No lessons yet"}</strong></div> : lessons.map((lesson) => <p key={lesson.id} className="lesson-row">{lesson.title}</p>)}
-      <FormModal open={open} title={lang === "ar" ? "درس جديد" : "New lesson"} onClose={() => setOpen(false)} onSubmit={async () => { await api("/api/institute/lessons", { method: "POST", body: JSON.stringify({ chapterId: chapter.id, title, videoReference: video || null }) }); setTitle(""); setVideo(""); setOpen(false); await load() }}>
+      {lessons.length === 0 ? <div className="empty"><i /><strong>{lang === "ar" ? "لا دروس بعد" : "No lessons yet"}</strong></div> : lessons.map((lesson) => (
+        <div key={lesson.id} className="lesson-row">
+          <span>{lesson.title}{lesson.videoReference ? <small> · {lesson.videoReference}</small> : null}</span>
+          <FreeToggle base="/api/institute" lesson={{ id: String(lesson.id), isFree: lesson.isFree }} onChange={() => void load()} />
+        </div>
+      ))}
+      <FormModal open={open} title={lang === "ar" ? "درس جديد" : "New lesson"} onClose={() => setOpen(false)} onSubmit={async () => { await api("/api/institute/lessons", { method: "POST", body: JSON.stringify({ chapterId: chapter.id, title, videoReference: video || null, isFree: free }) }); setTitle(""); setVideo(""); setFree(false); setOpen(false); await load() }}>
         <Field label={lang === "ar" ? "درس" : "Lesson"} value={title} onChange={(e) => setTitle(e.target.value)} required />
         <Field label={lang === "ar" ? "رابط يوتيوب أو مرجع الفيديو" : "YouTube link or video reference"} value={video} onChange={(e) => setVideo(e.target.value)} />
+        <label className="check-line"><input type="checkbox" checked={free} onChange={(e) => setFree(e.target.checked)} /> {lang === "ar" ? "درس مجاني" : "Free lesson"}</label>
       </FormModal>
     </section>
   )
