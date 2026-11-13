@@ -4,7 +4,8 @@ import { api, mediaUrl, setToken, type SessionUser } from "../shared/src/api"
 import { CourseCoverPicker, FreeToggle } from "../shared/src/media"
 import { useI18n } from "../shared/src/i18n"
 import { institutePermissions } from "../shared/src/permissions"
-import { Resource } from "../shared/src/resource"
+import { Resource, type Field as FormField } from "../shared/src/resource"
+import { catalogLookup, personLookup, saveCourse, useLookupLabels } from "../shared/src/lookup"
 import { SessionLine, sessionPhase, type SessionRow } from "../shared/src/sessions"
 import { PlanetHero } from "../shared/src/vivid"
 import { StatGrid } from "../shared/src/stats"
@@ -198,26 +199,52 @@ function TeacherLinks({ tick = 0 }: { tick?: number }) {
   return <CourseCards rows={rows.map((row) => ({ id: row.id, title: `${row.firstName} ${row.lastName}`, meta: row.phone }))} href={(id) => `/courses?teacherId=${id}`} empty={lang === "ar" ? "لا يوجد معلمون بعد" : "No teachers yet"} />
 }
 
+
+function courseFields(lang: string, base: string, extra: FormField[] = []): FormField[] {
+  const ar = lang === "ar"
+  return [
+    ...extra,
+    { name: "title", label: ar ? "عنوان الدورة" : "Course title", required: true },
+    { name: "description", label: ar ? "الوصف" : "Description", type: "textarea" },
+    { name: "gradeId", label: ar ? "المرحلة" : "Grade", type: "lookup", required: true, lookup: catalogLookup(`${base}/grades`, lang, { ar: "المرحلة", en: "grade" }) },
+    { name: "sectionId", label: ar ? "القسم" : "Section", type: "lookup", required: true, lookup: catalogLookup(`${base}/sections`, lang, { ar: "القسم", en: "section" }) },
+    { name: "subjectId", label: ar ? "المادة" : "Subject", type: "lookup", required: true, lookup: catalogLookup(`${base}/subjects`, lang, { ar: "المادة", en: "subject" }) },
+    { name: "learningDomainId", label: ar ? "المجال" : "Domain", type: "lookup", lookup: catalogLookup(`${base}/learning-domains`, lang, { ar: "المجال", en: "domain" }) },
+    { name: "cover", label: ar ? "غلاف الدورة" : "Course cover", type: "file", required: false },
+  ]
+}
+
 function Courses() {
   const { lang } = useI18n()
+  const ar = lang === "ar"
   const teacherId = new URLSearchParams(location.search).get("teacherId") ?? ""
   const path = teacherId ? `/api/institute/courses?teacherId=${teacherId}` : "/api/institute/courses"
+  const teacherOf = useLookupLabels("/api/institute/teachers", (row) => [row.firstName, row.lastName].filter(Boolean).join(" ") || String(row.phone ?? ""))
+  const gradeOf = useLookupLabels("/api/institute/grades", (row) => String(row.name ?? ""))
+  const subjectOf = useLookupLabels("/api/institute/subjects", (row) => String(row.name ?? ""))
   return (
     <Resource
       path={path}
       createPath="/api/institute/courses"
       createDefaults={teacherId ? { teacherId } : {}}
-      title={lang === "ar" ? "الدورات" : "Courses"}
+      title={ar ? "الدورات" : "Courses"}
       image="coverFileId"
+      update
       rowHref={(row) => `/courses/${row.id}`}
+      formTitle={(mode) => mode === "edit" ? (ar ? "تعديل دورة" : "Edit course") : (ar ? "إضافة دورة" : "Add course")}
       columns={[
-        { key: "title", label: lang === "ar" ? "العنوان" : "Title" },
-        { key: "teacherId", label: lang === "ar" ? "المعلم" : "Teacher" },
+        { key: "title", label: ar ? "العنوان" : "Title" },
+        { key: "teacherId", label: ar ? "المعلم" : "Teacher", value: (row) => teacherOf(row.teacherId) },
+        { key: "gradeId", label: ar ? "المرحلة" : "Grade", value: (row) => gradeOf(row.gradeId) },
+        { key: "subjectId", label: ar ? "المادة" : "Subject", value: (row) => subjectOf(row.subjectId) },
       ]}
-      fields={[
-        { name: "title", label: lang === "ar" ? "عنوان الدورة" : "Title", required: true },
-        { name: "teacherId", label: lang === "ar" ? "معرف المعلم" : "Teacher id", required: true },
-      ]}
+      fields={courseFields(lang, "/api/institute", [
+        { name: "teacherId", label: ar ? "المعلم" : "Teacher", type: "lookup", required: true, lookup: personLookup("/api/institute/teachers", lang, { ar: "المعلم", en: "teacher" }) },
+      ])}
+      submit={async ({ payload, mode, row, files }) => {
+        const body = payload instanceof FormData ? Object.fromEntries(payload.entries()) : payload
+        await saveCourse("/api/institute", body as Record<string, unknown>, files, mode, row)
+      }}
     />
   )
 }
