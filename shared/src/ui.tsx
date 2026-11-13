@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react"
 import { Link } from "react-router"
+import { CountUp, Planet } from "./vivid"
 import { useI18n } from "./i18n"
 
 export function Welcome({ title, lede }: { title: string; lede?: string }) {
@@ -12,11 +13,7 @@ export function Welcome({ title, lede }: { title: string; lede?: string }) {
         <h2>{title}</h2>
         {lede ? <p>{lede}</p> : null}
       </div>
-      <div className="welcome-art" aria-hidden="true">
-        <span className="blob b" />
-        <span className="cap" />
-        <span className="blob a" />
-      </div>
+      <Planet />
     </section>
   )
 }
@@ -40,17 +37,17 @@ export function MetricBand({ items }: { items: { label: string; value: string | 
   const rest = items.filter((item) => item !== lead)
   return (
     <section className="ledger">
-      <div className="ledger-main">
+      <div className="ledger-main tilt">
         <span>{lead.label}</span>
-        <strong>{lead.value}</strong>
+        <strong><CountUp value={lead.value} /></strong>
         {lead.hint ? <small>{lead.hint}</small> : null}
       </div>
       {rest.length > 0 ? (
         <ul className="ledger-side">
           {rest.map((item) => (
-            <li key={item.label}>
+            <li key={item.label} className="tilt">
               <span>{item.label}</span>
-              <strong>{item.value}</strong>
+              <strong><CountUp value={item.value} /></strong>
               {item.hint ? <small>{item.hint}</small> : null}
             </li>
           ))}
@@ -69,7 +66,7 @@ export function CountBars({ title, items }: { title: string; items: { label: str
       <div className="bars" role="img" aria-label={title}>
         {items.map((item) => (
           <div className="bar-col" key={item.label}>
-            <span className="bar-value">{item.value}</span>
+            <span className="bar-value"><CountUp value={item.value} /></span>
             <div className="bar-track"><div className="bar-fill" style={{ height: `${Math.max(8, Math.round((item.value / max) * 100))}%` }} /></div>
             <span className="bar-label">{item.label}</span>
           </div>

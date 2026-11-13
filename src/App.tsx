@@ -4,7 +4,8 @@ import { api, setToken, type SessionUser } from "../shared/src/api"
 import { useI18n } from "../shared/src/i18n"
 import { institutePermissions } from "../shared/src/permissions"
 import { Resource } from "../shared/src/resource"
-import { SessionLine, type SessionRow } from "../shared/src/sessions"
+import { SessionLine, sessionPhase, type SessionRow } from "../shared/src/sessions"
+import { PlanetHero } from "../shared/src/vivid"
 import { SessionSummary } from "../shared/src/summary"
 import { AuthLayout, LoginCard, Shell, type NavItem } from "../shared/src/shell"
 import { Callout, CourseCards, Field, Mast, MetricBand, PermissionPicker, SelectField } from "../shared/src/ui"
@@ -132,12 +133,22 @@ function Dashboard() {
   const { lang } = useI18n()
   const [data, setData] = useState<{ teachers: number; courses: number; students: number; codeBalance: number; poolMinutes: number; poolHours: number } | null>(null)
   const [error, setError] = useState("")
-  useEffect(() => { api<NonNullable<typeof data>>("/api/institute/dashboard").then(setData).catch((reason) => setError(reason.message)) }, [])
+  const [sessions, setSessions] = useState<SessionRow[]>([])
+  useEffect(() => {
+    api<NonNullable<typeof data>>("/api/institute/dashboard").then(setData).catch((reason) => setError(reason.message))
+    api<SessionRow[]>("/api/institute/sessions").then(setSessions).catch(() => setSessions([]))
+  }, [])
+  const live = sessions.filter((row) => sessionPhase(row) === "live").length
+  const upcoming = sessions.filter((row) => ["lobby", "upcoming"].includes(sessionPhase(row))).length
   if (error) return <Callout tone="bad">{error}</Callout>
   if (!data) return <div className="panel"><div className="skel" /><div className="skel short" style={{ marginTop: 12 }} /></div>
   return (
     <div className="stack">
-      <Mast kicker={lang === "ar" ? "تشغيل المعهد" : "Institute operations"} title={lang === "ar" ? "المعلمون والدورات والرصيد المشترك" : "Teachers, courses, and the shared pool"} />
+      <PlanetHero kicker={lang === "ar" ? "تشغيل المعهد" : "Institute operations"} title={lang === "ar" ? "المعلمون والدورات والرصيد المشترك" : "Teachers, courses, and the shared pool"}>
+        {live ? <span className="tv-chip live"><i className="tv-dot" />{live} {lang === "ar" ? "حصص مباشرة الآن" : "live now"}</span> : null}
+        <span className="tv-glass-chip"><strong>{upcoming}</strong> {lang === "ar" ? "حصص قادمة" : "upcoming sessions"}</span>
+        <Link className="btn" to="/sessions">{lang === "ar" ? "جدول الحصص" : "Sessions"}</Link>
+      </PlanetHero>
       <MetricBand items={[
         { label: lang === "ar" ? "ساعات الرصيد" : "Pool hours", value: data.poolHours, hint: `${data.poolMinutes} ${lang === "ar" ? "دقيقة" : "minutes"}`, lead: true },
         { label: lang === "ar" ? "المعلمون" : "Teachers", value: data.teachers },
