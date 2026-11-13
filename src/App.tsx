@@ -4,6 +4,8 @@ import { api, setToken, type SessionUser } from "../shared/src/api"
 import { useI18n } from "../shared/src/i18n"
 import { institutePermissions } from "../shared/src/permissions"
 import { Resource } from "../shared/src/resource"
+import { SessionLine, type SessionRow } from "../shared/src/sessions"
+import { SessionSummary } from "../shared/src/summary"
 import { AuthLayout, LoginCard, Shell, type NavItem } from "../shared/src/shell"
 import { Callout, CourseCards, Field, Mast, MetricBand, PermissionPicker, SelectField } from "../shared/src/ui"
 
@@ -117,6 +119,7 @@ function Frame() {
         <Route path="/plans" element={<Plans me={me} />} />
         <Route path="/pool" element={<Pool />} />
         <Route path="/sessions" element={<Sessions />} />
+        <Route path="/sessions/:id/summary" element={<SummaryRoom />} />
         <Route path="/faq" element={<Resource path="/api/institute/faq" title={lang === "ar" ? "الأسئلة" : "FAQ"} columns={[{ key: "question", label: lang === "ar" ? "السؤال" : "Question" }, { key: "answer", label: lang === "ar" ? "الجواب" : "Answer" }]} />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -283,7 +286,7 @@ function Students() {
         {error ? <Callout tone="bad">{error}</Callout> : null}
         <button className="btn" type="submit">{lang === "ar" ? "إضافة طالب" : "Add student"}</button>
       </form>
-      <Resource key={tick} path="/api/institute/students" title={lang === "ar" ? "سجل الطلاب" : "Student records"} columns={[{ key: "firstName", label: lang === "ar" ? "الاسم" : "Name" }, { key: "phone", label: lang === "ar" ? "الهاتف" : "Phone" }, { key: "studentKind", label: lang === "ar" ? "النوع" : "Kind" }]} />
+      <Resource key={tick} path="/api/institute/students" title={lang === "ar" ? "سجل الطلاب" : "Student records"} columns={[{ key: "firstName", label: lang === "ar" ? "الاسم" : "Name" }, { key: "phone", label: lang === "ar" ? "الهاتف" : "Phone" }, { key: "studentKind", label: lang === "ar" ? "النوع" : "Kind" }, { key: "xp", label: lang === "ar" ? "النقاط" : "XP" }, { key: "streak", label: lang === "ar" ? "السلسلة (يوم)" : "Streak (days)" }]} />
     </div>
   )
 }
@@ -359,33 +362,52 @@ function Pool() {
 
 function Sessions() {
   const { lang } = useI18n()
+  const ar = lang === "ar"
+  const [classrooms, setClassrooms] = useState<Row[]>([])
   const [classroomId, setClassroomId] = useState("")
+  const [title, setTitle] = useState("")
   const [startsAt, setStartsAt] = useState("")
   const [duration, setDuration] = useState(60)
   const [rows, setRows] = useState<Row[]>([])
   const [error, setError] = useState("")
   async function load() { setRows(await api("/api/institute/sessions")) }
   useEffect(() => { void load() }, [])
+  useEffect(() => { api<Row[]>("/api/institute/classrooms").then((data) => setClassrooms(Array.isArray(data) ? data : [])).catch(() => setClassrooms([])) }, [])
+  const roomTitle = (id: string) => classrooms.find((row) => row.id === id)?.title ?? ""
   return (
     <div className="page">
-      <Mast title={lang === "ar" ? "الجدولة تخصم المدة من الرصيد المشترك." : "Scheduling deducts the duration from the shared pool."} />
-      <form className="composer" onSubmit={async (event) => {
+      <Mast title={ar ? "الجلسات" : "Sessions"} lede={ar ? "الجدولة تخصم المدة من الرصيد المشترك. غرفة الانتظار تفتح قبل البداية بعشر دقائق." : "Scheduling deducts the duration from the shared pool. The waiting room opens ten minutes early."} />
+      <form className="sheet form-grid" onSubmit={async (event) => {
         event.preventDefault()
         setError("")
         try {
-          await api("/api/institute/sessions", { method: "POST", body: JSON.stringify({ classroomId, startsAt: new Date(startsAt).toISOString(), durationMinutes: duration }) })
+          await api("/api/institute/sessions", { method: "POST", body: JSON.stringify({ classroomId, startsAt: new Date(startsAt).toISOString(), durationMinutes: duration, title: title.trim() || null }) })
+          setTitle("")
           await load()
         } catch (reason) { setError(reason instanceof Error ? reason.message : "") }
       }}>
-        <Field label={lang === "ar" ? "معرف القاعة من الطلب" : "Classroom id from the request"} value={classroomId} onChange={(e) => setClassroomId(e.target.value)} />
-        <Field type="datetime-local" label={lang === "ar" ? "البداية" : "Starts"} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-        <SelectField label={lang === "ar" ? "المدة" : "Duration"} value={String(duration)} onChange={(value) => setDuration(Number(value))} options={[30, 45, 60, 90, 120].map((minutes) => ({ value: String(minutes), label: String(minutes) }))} />
+        <Field label={ar ? "عنوان الحصة (اختياري)" : "Session title (optional)"} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
+        {classrooms.length ? (
+          <SelectField label={ar ? "القاعة" : "Classroom"} value={classroomId} onChange={setClassroomId} options={[{ value: "", label: "—" }, ...classrooms.map((row) => ({ value: String(row.id), label: String(row.title || row.id) }))]} />
+        ) : (
+          <Field label={ar ? "معرف القاعة من الطلب" : "Classroom id from the request"} value={classroomId} onChange={(e) => setClassroomId(e.target.value)} />
+        )}
+        <Field type="datetime-local" label={ar ? "البداية" : "Starts"} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+        <SelectField label={ar ? "المدة" : "Duration"} value={String(duration)} onChange={(value) => setDuration(Number(value))} options={[30, 45, 60, 90, 120].map((minutes) => ({ value: String(minutes), label: `${minutes} ${ar ? "دقيقة" : "min"}` }))} />
         {error ? <Callout tone="bad">{error}</Callout> : null}
-        <button className="btn" type="submit">{lang === "ar" ? "جدولة من الرصيد المشترك" : "Schedule from the shared pool"}</button>
+        <button className="btn" type="submit">{ar ? "جدولة من الرصيد المشترك" : "Schedule from the shared pool"}</button>
       </form>
-      {rows.map((row) => <p key={row.id} className="record">{row.classroomId} · {row.durationMinutes} · {row.status}</p>)}
+      <section className="sheet">
+        {rows.length === 0 ? <p className="lede">{ar ? "ماكو جلسات مجدولة." : "No sessions scheduled."}</p> : null}
+        {rows.map((row) => <SessionLine key={row.id} row={row as unknown as SessionRow} room={roomTitle(row.classroomId)} summary={row.instituteId ? `/sessions/${row.id}/summary` : undefined} />)}
+      </section>
     </div>
   )
+}
+
+function SummaryRoom() {
+  const { id = "" } = useParams()
+  return <SessionSummary sessionId={id} base="/api/institute" />
 }
 
 function TeacherSessions() {
@@ -397,7 +419,7 @@ function TeacherSessions() {
     <section className="sheet">
       <h2>{lang === "ar" ? "جلساتك فقط" : "Your sessions only"}</h2>
       {error ? <Callout tone="bad">{error}</Callout> : null}
-      {rows.map((row) => <p key={row.id} className="lesson-row">{row.startsAt} · {row.durationMinutes}</p>)}
+      {rows.map((row) => <SessionLine key={row.id} row={row as unknown as SessionRow} />)}
     </section>
   )
 }
