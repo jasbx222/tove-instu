@@ -13,6 +13,28 @@ export type SessionUser = {
   approved?: boolean
 }
 
+const arabic: Record<string, string> = {
+  payments_paused: "الدفع الإلكتروني متوقف مؤقتاً. تواصل مع الإدارة للاشتراك.",
+  already_linked: "هذا المعلم مرتبط بالمعهد مسبقاً.",
+  phone_taken: "رقم الهاتف مسجّل مسبقاً.",
+  hour_subscription_required: "تحتاج باقة ساعات فعّالة ورصيداً متبقياً لفتح قاعة.",
+  livekit_unconfigured: "خدمة البث غير مضبوطة على الخادم. أخبر الإدارة.",
+  outside_window: "الحصة لم تفتح بعد. تفتح الغرفة قبل موعدها بعشر دقائق.",
+  pool_missing: "رصيد ساعات المعهد فارغ.",
+  invalid_count: "العدد يجب أن يكون بين 1 و100.",
+  invalid_expiry: "تاريخ الانتهاء يجب أن يكون في المستقبل.",
+  forbidden: "لا تملك صلاحية لهذا الإجراء.",
+  not_found: "العنصر غير موجود.",
+}
+
+function friendly(code: string, message: string) {
+  const ar = typeof document !== "undefined" && (document.documentElement.lang || "ar").startsWith("ar")
+  if (ar && arabic[code]) return arabic[code]
+  if (/invalid api key|could not establish signal/i.test(message))
+    return ar ? "تعذّر الاتصال بخادم البث. مفاتيح LiveKit غير صحيحة على الخادم." : message
+  return message
+}
+
 export class ApiError extends Error {
   status: number
   code: string
@@ -55,4 +77,9 @@ export async function download(path: string, filename: string) {
   link.download = filename
   link.click()
   URL.revokeObjectURL(url)
+}
+
+/** Public URL of a stored file, such as a course cover. */
+export function fileUrl(id: string | null | undefined) {
+  return id ? `${base}/api/files/${id}` : ""
 }

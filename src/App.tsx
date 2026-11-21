@@ -9,6 +9,7 @@ import { api, setToken, type SessionUser } from "../shared/src/api"
 import { FormSection, Fields, PermissionPicker, DateTimeField, Segmented, Select, TextArea, TextField } from "../shared/src/form"
 import { useI18n } from "../shared/src/i18n"
 import { institutePermissions } from "../shared/src/permissions"
+import { PaymentsPaused, SubscriptionsCard, usePaymentsOnline } from "../shared/src/plans"
 import { Resource } from "../shared/src/resource"
 import { AuthLayout, Boot, LoginCard, Shell, type NavItem } from "../shared/src/shell"
 import {
@@ -530,10 +531,12 @@ function Plans({ me }: { me: SessionUser }) {
   const [url, setUrl] = useState("")
   const [paying, setPaying] = useState("")
   const [error, setError] = useState("")
+  const online = usePaymentsOnline()
   useEffect(() => { api<Row[]>("/api/institute/plans").then(setPlans).catch(() => setPlans([])) }, [])
   const tones = ["sky", "green", "purple", "yellow"]
   return (
     <Screen lede={tr("الباقات السنوية والدفع.", "Yearly plans and payment.")}>
+      {online ? null : <PaymentsPaused />}
       {url ? <Alert tone="info" title={tr("رابط الدفع جاهز", "Payment link ready")}><a href={url} className="link" style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>{tr("افتح صفحة الدفع", "Open the payment page")}<IconExternalLink size={14} /></a><span dir="ltr" style={{ display: "block", marginTop: 4, opacity: 0.8 }}>{url}</span></Alert> : null}
       {error ? <Alert tone="bad">{error}</Alert> : null}
       {plans === null ? <CardSkeleton count={3} /> : plans.length === 0 ? <Card><EmptyState scene="ticket" title={tr("لا توجد باقات متاحة", "No plans available")} /></Card> : (
@@ -544,7 +547,7 @@ function Plans({ me }: { me: SessionUser }) {
               <h3 style={{ fontSize: "var(--fs-xl)" }}>{plan.title}</h3>
               <div className="price">{Number(plan.priceYearly).toLocaleString(locale)} <small>IQD / {tr("سنة", "year")}</small></div>
               {plan.codesCount != null ? <ul><li><IconCheck size={16} /><span><span className="num">{plan.codesCount}</span> {tr("كود تفعيل", "activation codes")}</span></li></ul> : null}
-              <Button variant="sky" block busy={paying === plan.id} onClick={async () => {
+              <Button variant="sky" block disabled={!online} busy={paying === plan.id} onClick={async () => {
                 setPaying(plan.id); setError("")
                 try {
                   const result = await api<{ paymentUrl: string }>("/api/institute/subscriptions", { method: "POST", body: JSON.stringify({ userId: me.ownerId, planId: plan.id }) })
@@ -555,6 +558,7 @@ function Plans({ me }: { me: SessionUser }) {
           ))}
         </div>
       )}
+      <SubscriptionsCard path="/api/institute/subscriptions" plans={plans} />
     </Screen>
   )
 }

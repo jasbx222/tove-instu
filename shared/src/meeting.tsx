@@ -36,7 +36,7 @@ export function Meeting({ sessionId, role }: { sessionId: string; role: "teacher
   if (error) return <Card><ErrorState message={error} /></Card>
   if (!token) return <Card pad><Skeleton lines={4} block /></Card>
   return (
-    <LiveKitRoom serverUrl={token.url} token={token.token} connect audio={role === "teacher"} video={role === "teacher"} onError={(reason) => setError(reason.message)}>
+    <LiveKitRoom serverUrl={token.url} token={token.token} connect audio={role === "teacher"} video={role === "teacher"} onError={(reason) => setError(new ApiError(0, "livekit", reason.message).message)}>
       <RoomAudioRenderer />
       <Stage sessionId={sessionId} role={role} chat={chat} />
     </LiveKitRoom>

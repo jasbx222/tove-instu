@@ -858,3 +858,85 @@ a.list-item:hover { background: var(--surface-2); }
 /* The outer .ctl shows the focus ring; the native control inside must not draw a second one. */
 .ctl input:focus, .ctl input:focus-visible, .ctl textarea:focus, .ctl textarea:focus-visible, .ctl button.ctl-trigger:focus-visible { box-shadow: none; outline: none; }
 .ctl:has(button.ctl-trigger:focus-visible) { border-color: var(--sky-500); box-shadow: var(--focus); }
+
+/* ==========================================================================
+   Notebook theme
+   School-notebook look: ruled paper, ink borders, hard "sticker" shadows,
+   highlighter yellow, chalkboard green. Same tokens, new values.
+   ========================================================================== */
+:root {
+  --green-50: #d5f1e5; --green-100: #bfe8d6; --green-200: #92d6b9;
+  --green-500: #2f7d63; --green-600: #266b54; --green-700: #1e2a5a;
+  --green-ink: #ffffff; --green-text: #1d5a44;
+  --sky-50: #dce6ff; --sky-100: #c3d3ff; --sky-500: #4c6fff; --sky-600: #3a5ce6; --sky-700: #1e2a5a; --sky-text: #2a47c9;
+  --yellow-50: #fff4c2; --yellow-100: #ffec95; --yellow-500: #ffe66d; --yellow-600: #f2d445; --yellow-text: #6b5200;
+  --coral-50: #ffe1dc; --coral-100: #ffc9c1; --coral-500: #f26b5b; --coral-600: #e0523f; --coral-text: #b02a1b;
+  --purple-50: #ffe0e8; --purple-100: #ffc7d4; --purple-500: #f58fa8; --purple-600: #e8708e; --purple-text: #8a2748;
+  --navy-950: #141c40; --navy-900: #1e2a5a; --navy-800: #2b3978; --navy-700: #3b4778;
+  --ink-600: #3b4778; --ink-500: #5a6592; --ink-400: #8c95b8; --ink-300: #aab4d4;
+  --line: #c9d3ea; --line-soft: #dce6f5;
+  --bg: #fffbf0; --surface: #ffffff; --surface-2: #fffdf6;
+  --ink: #1e2a5a;
+  --focus: 0 0 0 3px rgba(255, 230, 109, 0.95);
+  --font-display: "Baloo Bhaijaan 2", "Readex Pro", system-ui, sans-serif;
+  --shadow-xs: 2px 2px 0 var(--ink);
+  --shadow-sm: 3px 3px 0 var(--ink);
+  --shadow-md: 4px 5px 0 var(--ink);
+  --shadow-lg: 6px 8px 0 var(--ink);
+}
+[data-app="admin"] { --side-bg: #1e2a5a; --side-text: #d5dbf2; --side-muted: #9aa5d0; --side-active-bg: #ffe66d; --side-active-text: #1e2a5a; --side-mark: #1e2a5a; --side-line: rgba(255, 255, 255, 0.14); }
+[data-app="admin"] .nav-link.active .nav-ico { color: #1e2a5a; }
+[data-app="teacher"], [data-app="institute"] { --side-bg: #ffffff; --side-active-bg: #ffe66d; --side-active-text: #1e2a5a; --side-mark: #1e2a5a; --side-line: #1e2a5a; --side-hover: #fff4c2; }
+[data-app="institute"] { --accent: #4c6fff; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to left, transparent 38px, rgba(242, 107, 91, 0.42) 38px, rgba(242, 107, 91, 0.42) 40px, transparent 40px),
+    repeating-linear-gradient(to bottom, transparent 0 27px, #dce6f5 27px 28px);
+  background-attachment: fixed;
+}
+::selection { background: var(--yellow-500); }
+.main, .page { background: transparent; }
+
+.page-head h1 { display: inline; background: linear-gradient(transparent 58%, var(--yellow-500) 58% 92%, transparent 92%); padding-inline: 4px; }
+.side { border-inline-end: 1.5px solid var(--ink); }
+.nav-link.active { border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+[data-app="admin"] .nav-link.active { border-color: #1e2a5a; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35); }
+.nav-link.active::before { display: none; }
+
+.card { border: 1.5px solid var(--ink); box-shadow: var(--shadow-sm); border-radius: var(--r-lg); }
+.card-head { border-bottom: 1.5px dashed var(--line); }
+.card-foot { border-top: 1.5px dashed var(--line); }
+.card.interactive:hover { transform: translate(-2px, -2px); box-shadow: 5px 6px 0 var(--ink); border-color: var(--ink); }
+.card-head .card-ico { border: 1.5px solid var(--ink); }
+
+.btn { --b-bd: var(--ink); --b-lip: var(--ink); border-color: var(--ink); }
+.btn.primary { --b-bg: var(--green-500); --b-fg: #fff; --b-bd: var(--ink); --b-lip: var(--ink); --b-hover: #368a6e; }
+.btn.sky { --b-bg: var(--sky-500); --b-fg: #fff; --b-bd: var(--ink); --b-lip: var(--ink); --b-hover: #5f7fff; }
+.btn.danger { --b-bg: var(--coral-500); --b-fg: #fff; --b-bd: var(--ink); --b-lip: var(--ink); --b-hover: #f47d6f; }
+.btn.danger-soft { --b-bg: var(--coral-50); --b-fg: var(--coral-text); --b-bd: var(--ink); --b-lip: var(--ink); --b-hover: #ffd2cb; }
+.btn.ghost { --b-bd: transparent; --b-lip: transparent; --b-hover: var(--yellow-50); }
+
+.badge { border: 1.3px solid var(--ink); }
+.badge.live { color: #fff; }
+.avatar { border: 1.5px solid var(--ink); }
+
+.ctl { border: 1.5px solid var(--ink); background: #fff; box-shadow: 2px 2px 0 var(--ink); }
+.ctl:hover { border-color: var(--ink); }
+.ctl:focus-within { border-color: var(--sky-500); box-shadow: 2px 2px 0 var(--sky-500); }
+.ctl.invalid { border-color: var(--coral-500); box-shadow: 2px 2px 0 var(--coral-500); }
+.ctl.invalid:focus-within { box-shadow: 2px 2px 0 var(--coral-500); }
+
+.menu-pop, .dialog, .toast { border: 1.5px solid var(--ink); box-shadow: var(--shadow-md); }
+
+/* ---------- Course studio header ---------- */
+.studio-head { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); overflow: hidden; }
+.studio-cover { position: relative; min-height: 200px; border-inline-end: 1.5px solid var(--ink); background: var(--yellow-50); }
+.studio-cover > img, .studio-cover > .cover { width: 100%; height: 100%; object-fit: cover; }
+.studio-cover-btn { position: absolute; inset-inline-start: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; background: #fff; border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.studio-cover-btn:hover { background: var(--yellow-500); }
+.studio-info { display: grid; gap: 8px; padding: var(--s6); align-content: start; }
+.studio-info h2 { font-size: var(--fs-xl); }
+.studio-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 720px) { .studio-head { grid-template-columns: 1fr; } .studio-cover { min-height: 160px; border-inline-end: 0; border-bottom: 1.5px solid var(--ink); } }

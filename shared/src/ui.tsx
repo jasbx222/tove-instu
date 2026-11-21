@@ -262,7 +262,15 @@ export function CardSkeleton({ count = 4 }: { count?: number }) {
 
 /* ---------------- Tiles ---------------- */
 
-export function CoverTiles({ rows, href, emptyTitle, emptyHint, emptyAction, scene = "books" }: { rows: { id: string; title: string; meta?: ReactNode }[]; href: (id: string) => string; emptyTitle: string; emptyHint?: string; emptyAction?: ReactNode; scene?: Parameters<typeof EmptyArt>[0]["scene"] }) {
+/** Course cover: the uploaded image when there is one, otherwise the generated artwork. */
+export function CoverImage({ src, seed }: { src?: string; seed: string }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [src])
+  if (!src || failed) return <Cover seed={seed} />
+  return <img className="cover" src={src} alt="" loading="lazy" onError={() => setFailed(true)} style={{ objectFit: "cover" }} />
+}
+
+export function CoverTiles({ rows, href, emptyTitle, emptyHint, emptyAction, scene = "books" }: { rows: { id: string; title: string; meta?: ReactNode; image?: string }[]; href: (id: string) => string; emptyTitle: string; emptyHint?: string; emptyAction?: ReactNode; scene?: Parameters<typeof EmptyArt>[0]["scene"] }) {
   const { t } = useI18n()
   if (rows.length === 0) return <Card><EmptyState title={emptyTitle} hint={emptyHint} scene={scene} action={emptyAction} /></Card>
   return (
@@ -270,7 +278,7 @@ export function CoverTiles({ rows, href, emptyTitle, emptyHint, emptyAction, sce
       {rows.map((row, index) => (
         <motion.div key={row.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: Math.min(index, 8) * 0.04 }}>
           <Link to={href(row.id)} className="card interactive tile" style={{ height: "100%" }}>
-            <Cover seed={row.title || row.id} />
+            <CoverImage src={row.image} seed={row.title || row.id} />
             <div className="tile-body">
               <h3>{row.title || "—"}</h3>
               {row.meta ? <p>{row.meta}</p> : null}
